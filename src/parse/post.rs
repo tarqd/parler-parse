@@ -1,6 +1,7 @@
 use super::derive::*;
 use super::media::*;
 use super::parser::*;
+use super::UntrimmedString;
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PostCard {
@@ -8,7 +9,7 @@ pub struct PostCard {
     #[html(selector = "div.card--header a.card-meta--row")]
     author: Option<Author>,
     #[html(selector = "div.card--body > p", attr = "inner")]
-    body: Option<String>,
+    body: Option<UntrimmedString>,
     #[html(
         selector = "span.card-meta--row span.impressions--wrapper span.impressions--count",
         attr = "inner"
@@ -99,4 +100,14 @@ pub struct Comment {
 mod tests {
     use super::*;
     use unhtml::scraper::Html;
+    #[test]
+    fn test() {
+        use unhtml::Text;
+        let test = r#"<p><a href="/profile/RudyG/posts" class="at">@RudyG</a> <br><a href="/profile/JennaEllisEsq/posts" class="at">@JennaEllisEsq</a> <br><a href="/profile/SidneyPowell/posts" class="at">@SidneyPowell</a></p>"#;
+        let doc = Html::parse_fragment(&test);
+        let sel = unhtml::scraper::Selector::parse("p").unwrap();
+        let lol : UntrimmedString = doc.select(&sel).inner_text().unwrap();
+        println!("{:#?}", lol);
+
+    }
 }
