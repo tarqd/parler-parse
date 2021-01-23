@@ -1,6 +1,6 @@
 # parler-parse
 
-Parler HTML goes in (stdin), structued JSON comes out (stdout)
+Parler HTML goes in (stdin), structured JSON comes out (stdout)
 
 Might be useful for feeding into elasticsearch or cross-referencing with the video/images dump. 
 
