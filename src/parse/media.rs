@@ -1,24 +1,21 @@
-use super::parser::*;
 use super::derive::*;
+use super::parser::*;
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
-#[html(selector="div.media-container--wrapper")]
+#[html(selector = "div.media-container--wrapper")]
 pub struct MediaContainer {
     #[html(selector = ".sensitive--content--wrapper", attr = "id")]
     sensitive_id: Option<String>,
     media_items: Vec<MediaItem>,
 }
 
-#[derive(FromHtml, Debug, PartialEq,Serialize, Deserialize)]
-#[html(
-selector = "
+#[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
+#[html(selector = "
     div.mc-basic--container,
     div.mc-iframe-embed--container,
     div.mc-image--container,
     div.mc-video--container,
-    div.mc-website--container"
-
-)]
+    div.mc-website--container")]
 pub struct MediaItem {
     #[html(selector = "div.mc-article--meta--wrapper,
      div.mc-basic--meta--wrapper,
@@ -31,15 +28,15 @@ pub struct MediaItem {
     meta: MediaMetadata,
 }
 
-#[derive(FromHtml, Debug, PartialEq,Serialize, Deserialize)]
+#[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaMetadata {
     #[html(
-    selector = "span.mc-article--title,
+        selector = "span.mc-article--title,
                 span.mc-basic--title,
                 span.mc-iframe-embed--title,
                 span.mc-video--title,
                 span.mc-website--title",
-    attr = "inner"
+        attr = "inner"
     )]
     title: Option<String>,
 
@@ -53,17 +50,17 @@ pub struct MediaMetadata {
     link: Option<ResourceLink>,
 
     #[html(
-    selector = "span.mc-article--excerpt,
+        selector = "span.mc-article--excerpt,
                 span.mc-basic--excerpt,
                 span.mc-iframe-embed--excerpt,
                 span.mc-video--excerpt,
                 span.mc-website--excerpt",
-    attr = "inner"
+        attr = "inner"
     )]
     excerpt: Option<String>,
 }
 
-#[derive(FromHtml, Debug, PartialEq,Serialize,Deserialize)]
+#[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 #[html(selector = "a")]
 pub struct Link {
     #[html(attr = "inner")]
@@ -72,7 +69,7 @@ pub struct Link {
     destination: Option<String>,
 }
 
-#[derive(Debug, PartialEq,Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceLinkKind {
     Anchor,
     IFrame,
@@ -83,7 +80,7 @@ pub enum ResourceLinkKind {
     Unknown,
 }
 
-#[derive(Debug, PartialEq,Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLink {
     kind: ResourceLinkKind,
     label: Option<String>,
@@ -103,7 +100,7 @@ impl FromHtml for ResourceLink {
         audio[src],
         audio[src]",
         )
-            .unwrap();
+        .unwrap();
         let mut current = select.select_elements(&sel);
         let first = current.next().ok_or(())?;
 
@@ -135,8 +132,8 @@ impl FromHtml for ResourceLink {
                 .value()
                 .attr("alt")
                 .or_else(|| first.value().attr("title")))
-                .map(String::from)
-                .or_else(|| Some(first.text().map(str::trim).collect::<Vec<&str>>().concat())),
+            .map(String::from)
+            .or_else(|| Some(first.text().map(str::trim).collect::<Vec<&str>>().concat())),
         })
     }
 }

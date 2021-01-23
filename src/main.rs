@@ -10,5 +10,4 @@ fn main() -> io::Result<()> {
     //println!("{:#?}", page);
     serde_json::to_writer_pretty(io::stdout(), &page)?;
     Ok(())
-
 }
