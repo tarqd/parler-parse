@@ -1,14 +1,34 @@
 use super::derive::*;
 use super::parser::FromHtml;
+use super::post::Author;
+use std::str::FromStr;
+
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 #[html(selector = "head")]
 pub struct OGMeta {
     #[html(selector = "meta[property='og:title']", attr = "content")]
     title: Option<String>,
+    #[html(selector = "meta[property='og:title']", attr = "content")]
+    owner: Option<PageAuthor>,
     #[html(selector = "meta[property='og:url']", attr = "content")]
     url: Option<String>,
     #[html(selector = "meta[property='og:image']", attr = "content")]
     image_url: Option<String>,
+}
+#[derive(FromText, Debug, PartialEq, Serialize, Deserialize)]
+struct PageAuthor(super::post::Author);
+impl FromStr for PageAuthor {
+    type Err = unhtml::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut splitter = s.split(" -").map(str::trim);
+
+        let (username, name) = (splitter.next(), splitter.next());
+        Ok(Self(super::post::Author {
+            username: username.ok_or(())?.into(),
+            name: name.map(String::from),
+        }))
+    }
 }
 
 #[cfg(test)]
@@ -38,6 +58,10 @@ mod tests {
                 title: Some("@username - name -".into()),
                 url: Some("/post/id".into()),
                 image_url: Some("https://images.parler.com/id_256".into()),
+                owner: Some(PageAuthor(Author {
+                    username: "@username".into(),
+                    name: Some("name".into())
+                }))
             }
         )
     }

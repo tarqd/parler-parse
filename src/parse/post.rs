@@ -35,12 +35,18 @@ pub struct ParlerPost {
     engagements: Option<PostCounts>,
 }
 
+impl ParlerPost {
+    pub fn get_card(&mut self, kind: PostCardType) -> Option<&mut PostCard> {
+        self.cards.iter_mut().find(|c| c.kind == kind)
+    }
+}
+
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Author {
     #[html(selector = "span.author--name", attr = "inner")]
-    name: Option<String>,
+    pub name: Option<String>,
     #[html(selector = "span.author--username", attr = "inner")]
-    username: String,
+    pub username: String,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -96,18 +102,3 @@ pub struct Comment {
     body: Option<String>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use unhtml::scraper::Html;
-    #[test]
-    fn test() {
-        use unhtml::Text;
-        let test = r#"<p><a href="/profile/RudyG/posts" class="at">@RudyG</a> <br><a href="/profile/JennaEllisEsq/posts" class="at">@JennaEllisEsq</a> <br><a href="/profile/SidneyPowell/posts" class="at">@SidneyPowell</a></p>"#;
-        let doc = Html::parse_fragment(&test);
-        let sel = unhtml::scraper::Selector::parse("p").unwrap();
-        let lol : UntrimmedString = doc.select(&sel).inner_text().unwrap();
-        println!("{:#?}", lol);
-
-    }
-}

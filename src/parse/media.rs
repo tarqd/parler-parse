@@ -1,7 +1,7 @@
 use super::derive::*;
 use super::parser::*;
-use unhtml::Text;
 use std::str::FromStr;
+use unhtml::Text;
 use url::ParseError;
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
@@ -29,7 +29,7 @@ pub struct MediaItem {
      div.mc-image--meta--wrapper,
      div.mc-image--modal")]
     meta: MediaMetadata,
-    #[html(selector="div.mc-image--modal", attr="id")]
+    #[html(selector = "div.mc-image--modal", attr = "id")]
     numeric_id: Option<IDFromSuffix>,
 }
 
@@ -63,8 +63,6 @@ pub struct MediaMetadata {
         attr = "inner"
     )]
     excerpt: Option<String>,
-
-
 }
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
@@ -112,17 +110,15 @@ impl FromHtml for ResourceLink {
         let mut current = select.select_elements(&sel);
         let first = current.next().ok_or(())?;
 
-
         let location = first
             .value()
             .attr("href")
             .or_else(|| first.value().attr("src"))
             .map(String::from);
-        let id = location.as_ref()
-            .and_then(| v| IDFromUrl::from_str(v.as_ref()).ok())
+        let id = location
+            .as_ref()
+            .and_then(|v| IDFromUrl::from_str(v.as_ref()).ok())
             .map(|v| v.into());
-
-
 
         Ok(ResourceLink {
             kind: match first.value().name().to_ascii_lowercase().as_str() {
@@ -163,25 +159,25 @@ impl FromHtml for ElementExists {
     }
 }
 
-#[derive(FromText,Debug, PartialEq, Serialize, Deserialize)]
+#[derive(FromText, Debug, PartialEq, Serialize, Deserialize)]
 struct IDFromSuffix(String);
 
 impl FromStr for IDFromSuffix {
     type Err = unhtml::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.rsplit('-').next()
+        s.rsplit('-')
+            .next()
             .map(|v| Self(v.into()))
             .ok_or(().into())
     }
-
 }
 
-#[derive(FromText,Debug,PartialEq,Serialize, Deserialize)]
+#[derive(FromText, Debug, PartialEq, Serialize, Deserialize)]
 struct IDFromUrl(String);
 impl From<IDFromUrl> for String {
     fn from(v: IDFromUrl) -> Self {
-       v.0
+        v.0
     }
 }
 impl FromStr for IDFromUrl {
@@ -192,24 +188,21 @@ impl FromStr for IDFromUrl {
         let domain = url.domain().ok_or(())?;
 
         if domain.ends_with(".parler.com") {
-
             let path = std::path::Path::new(url.path());
-            let id = path.file_stem()
-                .ok_or(())?
-                .to_str()
-                .ok_or(())?;
+            let id = path.file_stem().ok_or(())?.to_str().ok_or(())?;
 
-            return id.split('_').next().map(|s| Self(s.into()))
+            return id
+                .split('_')
+                .next()
+                .map(|s| Self(s.into()))
                 .ok_or(().into());
         }
         Err(().into())
     }
-
 }
 
 #[cfg(test)]
-mod tests
-{
+mod tests {
     use super::*;
 
     #[test]
@@ -228,7 +221,6 @@ mod tests
         let sel = Selector::parse(&"img").unwrap();
         let id = IDFromUrl::from_attr(&mut doc.select(&sel), "src").unwrap();
         assert_eq!("test", id.0)
-
     }
     #[test]
     fn video_path_to_id() {
@@ -239,7 +231,5 @@ mod tests
         let sel = Selector::parse(&"video").unwrap();
         let id = IDFromUrl::from_attr(&mut doc.select(&sel), "src").unwrap();
         assert_eq!("test", id.0)
-
     }
 }
-

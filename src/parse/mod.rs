@@ -1,6 +1,6 @@
 use unhtml::scraper::ElementRef;
 use unhtml::ElemIter;
-use url::{Url, ParseError as UrlParseError };
+use url::{ParseError as UrlParseError, Url};
 pub mod media;
 pub mod opengraph;
 pub mod page;
@@ -9,10 +9,10 @@ pub mod post;
 pub use types::UntrimmedString;
 
 mod types {
+    use serde::{Deserialize, Serialize};
+    use std::fmt::{self, Display};
     use unhtml::scraper::ElementRef;
     use unhtml::ElemIter;
-    use serde::{Serialize, Deserialize};
-    use std::fmt::{self, Display};
     #[derive(Debug, PartialEq, Serialize, Deserialize)]
     pub struct UntrimmedString(String);
 
@@ -49,8 +49,22 @@ mod types {
             self.0.fmt(fmt)
         }
     }
-}
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use unhtml::scraper::Html;
+        #[test]
+        fn untrimmed_string() {
+            use unhtml::Text;
+            let test = r#"<p><a href="/profile/RudyG/posts" class="at">@RudyG</a> <br><a href="/profile/JennaEllisEsq/posts" class="at">@JennaEllisEsq</a> <br><a href="/profile/SidneyPowell/posts" class="at">@SidneyPowell</a></p>"#;
+            let doc = Html::parse_fragment(&test);
+            let sel = unhtml::scraper::Selector::parse("p").unwrap();
+            let res : UntrimmedString = doc.select(&sel).inner_text().unwrap();
+            assert_eq!("@RudyG @JennaEllisEsq @SidneyPowell", res.to_string());
+        }
+    }
 
+}
 
 pub mod parser {
     pub use selectors::{attr::CaseSensitivity, Element};
