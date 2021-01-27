@@ -4,6 +4,21 @@ Parler HTML goes in (stdin), structured JSON comes out (stdout)
 
 Might be useful for feeding into elasticsearch or cross-referencing with the video/images dump. 
 
+# Usage
+
+You will need a rust compiler (easiest way is via [rustup](https://rustup.rs/)) to build from source. After that run the following commands in your terminal:
+
+```
+# clone the repo
+git clone https://github.com/ilsken/parler-parse.git && cd parler-parse
+
+# run the example
+https://github.com/ilsken/parler-parse.git
+cargo run < examples/echo--parent-no-comment.html
+
+```
+
+
 ## Currently parses:
 
 - OG Meta
