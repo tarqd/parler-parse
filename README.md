@@ -18,6 +18,9 @@ cargo run < examples/echo--parent-no-comment.html
 
 ```
 
+# Where do I get the archives?
+
+This project was developed against the "partial parler post text" archive that available from Distributed Denial of Secrets. 
 
 ## Currently parses:
 
