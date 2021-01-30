@@ -59,11 +59,10 @@ mod types {
             let test = r#"<p><a href="/profile/RudyG/posts" class="at">@RudyG</a> <br><a href="/profile/JennaEllisEsq/posts" class="at">@JennaEllisEsq</a> <br><a href="/profile/SidneyPowell/posts" class="at">@SidneyPowell</a></p>"#;
             let doc = Html::parse_fragment(&test);
             let sel = unhtml::scraper::Selector::parse("p").unwrap();
-            let res : UntrimmedString = doc.select(&sel).inner_text().unwrap();
+            let res: UntrimmedString = doc.select(&sel).inner_text().unwrap();
             assert_eq!("@RudyG @JennaEllisEsq @SidneyPowell", res.to_string());
         }
     }
-
 }
 
 pub mod parser {

@@ -11,4 +11,3 @@ pub struct ParlerPage {
     pub opengraph_meta: OGMeta,
     pub post: ParlerPost,
 }
-

@@ -101,4 +101,3 @@ pub struct Comment {
     #[html(selector = "div.card--body p", attr = "inner")]
     body: Option<String>,
 }
-
