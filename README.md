@@ -97,3 +97,8 @@ Might be useful for feeding into elasticsearch or cross-referencing with the vid
   }
 }
 ```
+
+
+# License
+
+MIT licensed, feel free to use it. If you want to use it for research, I'd love to hear about it and help if I can. Shoot me an email or message me on twitter (@chris_tarquini)
