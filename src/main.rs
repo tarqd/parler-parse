@@ -187,6 +187,7 @@ fn main() -> Result<()> {
                     serde_json::to_writer
                 })(stdout.borrow_mut(), &page)
                 .unwrap();
+		println!("");
 
                 continue;
             } else if let Err(e) = result {
