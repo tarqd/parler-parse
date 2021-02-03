@@ -7,11 +7,11 @@ use std::str::FromStr;
 #[html(selector = "head")]
 pub struct OGMeta {
     #[html(selector = "meta[property='og:title']", attr = "content")]
-    title: Option<String>,
+    title: String,
     #[html(selector = "meta[property='og:title']", attr = "content")]
-    owner: Option<PageAuthor>,
+    owner: PageAuthor,
     #[html(selector = "meta[property='og:url']", attr = "content")]
-    url: Option<String>,
+    url: String,
     #[html(selector = "meta[property='og:image']", attr = "content")]
     image_url: Option<String>,
 }

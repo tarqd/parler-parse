@@ -4,6 +4,70 @@ use std::str::FromStr;
 use unhtml::Text;
 use url::ParseError;
 
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub enum MediaKind {
+    Video,
+    Audio,
+    Image,
+    Article,
+    Basic,
+    IframeEmbed,
+    Website
+}
+#[derive(FromHtml,Debug, PartialEq, Serialize, Deserialize)]
+#[html(selector="img")]
+pub struct SimpleImage {
+    #[html(attr="src")]
+    location: String,
+    #[html(attr="src")]
+    id: Option<IDFromUrl>
+}
+
+#[derive(FromHtml,Debug, PartialEq, Serialize, Deserialize)]
+#[html(selector="a")]
+pub struct SimpleLink {
+    #[html(attr="href")]
+    location: String,
+    #[html(attr="inner")]
+    label: Option<String>,
+    #[html(attr="src")]
+    id: Option<IDFromUrl>
+}
+macro_rules! match_class {
+    ($e:expr,  {  $pf:expr => $tf:expr, $($p:expr => $t:expr),*  }) => {
+        {
+            if $e.has_class($pf, CaseSensitivity::AsciiCaseInsensitive) {
+                Ok($tf)
+            } $(
+                else if $e.has_class($p, CaseSensitivity::AsciiCaseInsensitive) {
+                    Ok($t)
+                }
+            )+
+            else {
+                Err(().into())
+            }
+        }
+    }
+}
+
+impl FromHtml for MediaKind {
+    fn from_elements(select: ElemIter) -> unhtml::Result<Self> {
+        let elem = select.next().ok_or(())?;
+        let elem = elem.value();
+        
+        match_class!(elem, {
+            "mc-video--container" => MediaKind::Video,
+            "mc-image--container" => MediaKind::Image,
+            "mc-basic--container" => MediaKind::Basic,
+            "mc-article--container" => MediaKind::Article,
+            "mc-website--container" => MediaKind::Website,
+            "mc-iframe-embed--container" => MediaKind::IframeEmbed,
+            "mc-audio--container" => MediaKind::Audio
+        })
+            
+    }
+}
+
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 #[html(selector = "div.media-container--wrapper")]
 pub struct MediaContainer {
@@ -14,12 +78,16 @@ pub struct MediaContainer {
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 #[html(selector = "
-    div.mc-basic--container,
-    div.mc-iframe-embed--container,
-    div.mc-image--container,
-    div.mc-video--container,
-    div.mc-website--container")]
+div.mc-video--container,
+div.mc-image--container,
+div.mc-basic--container,
+div.mc-article--container,
+div.mc-website--container,
+div.mc-iframe-embed--container,
+div.mc-audio--container
+")]
 pub struct MediaItem {
+    kind: MediaKind,
     #[html(selector = "div.mc-article--meta--wrapper,
      div.mc-basic--meta--wrapper,
      div.mc-iframe-embed--meta--wrapper,
@@ -75,19 +143,8 @@ pub struct Link {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub enum ResourceLinkKind {
-    Anchor,
-    IFrame,
-    Video,
-    Audio,
-    Image,
-    Embed,
-    Unknown,
-}
-
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLink {
-    kind: ResourceLinkKind,
+//    kind: ResourceLinkKind,
     label: Option<String>,
     location: Option<String>,
     id: Option<String>,
@@ -121,23 +178,6 @@ impl FromHtml for ResourceLink {
             .map(|v| v.into());
 
         Ok(ResourceLink {
-            kind: match first.value().name().to_ascii_lowercase().as_str() {
-                "a" => ResourceLinkKind::Anchor,
-                "img" => ResourceLinkKind::Image,
-                "video" => ResourceLinkKind::Video,
-                "iframe" => ResourceLinkKind::IFrame,
-                "audio" => ResourceLinkKind::Audio,
-                "embed" => ResourceLinkKind::Embed,
-                "source" => first.parent_element().map_or_else(
-                    || ResourceLinkKind::Unknown,
-                    |v| match v.value().name() {
-                        "video" => ResourceLinkKind::Video,
-                        "audio" => ResourceLinkKind::Audio,
-                        _ => ResourceLinkKind::Unknown,
-                    },
-                ),
-                _ => ResourceLinkKind::Unknown,
-            },
             location,
             id,
             label: (first
@@ -203,6 +243,8 @@ impl FromStr for IDFromUrl {
 
 #[cfg(test)]
 mod tests {
+    use rayon::collections::linked_list;
+
     use super::*;
 
     #[test]
@@ -231,5 +273,44 @@ mod tests {
         let sel = Selector::parse(&"video").unwrap();
         let id = IDFromUrl::from_attr(&mut doc.select(&sel), "src").unwrap();
         assert_eq!("test", id.0)
+    }
+    #[test]
+    fn test_video_parse() {
+        let str = r#"
+        <div class="mc-video--container w--100 p--flex pf--col pf--ac">
+        <div class="mc-video--wrapper">
+            <video controls>
+                <source src="https://video.parler.com/78/6K/test.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="mc-video--meta--wrapper w--100 p--flex pf--col pf--jsb">
+            <span class="mc-video--title reblock"></span>
+            <span class="mc-video--excerpt reblock"></span>
+            <span class="mc-video--link">
+              <a href="https://video.parler.com/78/6K/test_small.mp4" class="p--flex pf--row pf--ac">
+                <span class="mc-video--link--icon">
+                  <img src="/512ae92f/images/icons/link.svg" alt="">
+                </span>
+                https://video.parler.com/78/6K/test_small.mp4
+              </a>
+            </span>
+        </div>
+    </div>
+        "#;
+        let mn = MediaItem::from_html(str).unwrap();
+        assert_eq!(mn, MediaItem {
+            kind: MediaKind::Video,
+            numeric_id: None,
+            meta: MediaMetadata {
+                title: Some("".into()),
+                excerpt: Some("".into()),
+                link: Some(ResourceLink {
+                    label: Some("https://video.parler.com/78/6K/test_small.mp4".into()),
+                    location: Some("https://video.parler.com/78/6K/test_small.mp4".into()),
+                    id: Some("test".into())
+                })
+            }
+        })
     }
 }

@@ -35,17 +35,12 @@ pub struct ParlerPost {
     engagements: Option<PostCounts>,
 }
 
-impl ParlerPost {
-    pub fn get_card(&mut self, kind: PostCardType) -> Option<&mut PostCard> {
-        self.cards.iter_mut().find(|c| c.kind == kind)
-    }
-}
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Author {
-    #[html(selector = "span.author--name", attr = "inner")]
+    #[html(selector = "span.author--name,span.profile--name", attr = "inner")]
     pub name: Option<String>,
-    #[html(selector = "span.author--username", attr = "inner")]
+    #[html(selector = "span.author--username,span.profile--username", attr = "inner")]
     pub username: String,
 }
 
