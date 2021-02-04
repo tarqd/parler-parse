@@ -175,7 +175,7 @@ fn main() -> Result<()> {
             Err(e) => Err(e),
         });
     let rx = rx.clone();
-    let join = std::thread::spawn(move || {
+    let writer = std::thread::spawn(move || {
         let mut stdout = io::stdout();
         let compact = compact;
         loop {
@@ -196,10 +196,11 @@ fn main() -> Result<()> {
             break;
         }
     });
+
     files.for_each(|v| {
         /* TODO: log successful files and failed files */
     });
     let res = tx.send(Message::Stop);
-    join.join().unwrap();
+    writer.join().unwrap();
     res.map_err(|e| anyhow!(e))
 }
