@@ -12,26 +12,26 @@ pub enum MediaKind {
     Article,
     Basic,
     IframeEmbed,
-    Website
+    Website,
 }
-#[derive(FromHtml,Debug, PartialEq, Serialize, Deserialize)]
-#[html(selector="img")]
+#[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
+#[html(selector = "img")]
 pub struct SimpleImage {
-    #[html(attr="src")]
-    location: String,
-    #[html(attr="src")]
-    id: Option<IDFromUrl>
+    #[html(attr = "src")]
+    pub location: String,
+    #[html(attr = "src")]
+    pub id: Option<IDFromUrl>,
 }
 
-#[derive(FromHtml,Debug, PartialEq, Serialize, Deserialize)]
-#[html(selector="a")]
+#[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
+#[html(selector = "a")]
 pub struct SimpleLink {
-    #[html(attr="href")]
+    #[html(attr = "href")]
     location: String,
-    #[html(attr="inner")]
+    #[html(attr = "inner")]
     label: Option<String>,
-    #[html(attr="src")]
-    id: Option<IDFromUrl>
+    #[html(attr = "src")]
+    id: Option<IDFromUrl>,
 }
 macro_rules! match_class {
     ($e:expr,  {  $pf:expr => $tf:expr, $($p:expr => $t:expr),*  }) => {
@@ -54,7 +54,7 @@ impl FromHtml for MediaKind {
     fn from_elements(select: ElemIter) -> unhtml::Result<Self> {
         let elem = select.next().ok_or(())?;
         let elem = elem.value();
-        
+
         match_class!(elem, {
             "mc-video--container" => MediaKind::Video,
             "mc-image--container" => MediaKind::Image,
@@ -64,7 +64,6 @@ impl FromHtml for MediaKind {
             "mc-iframe-embed--container" => MediaKind::IframeEmbed,
             "mc-audio--container" => MediaKind::Audio
         })
-            
     }
 }
 
@@ -88,6 +87,7 @@ div.mc-audio--container
 ")]
 pub struct MediaItem {
     kind: MediaKind,
+    #[serde(flatten)]
     #[html(selector = "div.mc-article--meta--wrapper,
      div.mc-basic--meta--wrapper,
      div.mc-iframe-embed--meta--wrapper,
@@ -113,6 +113,7 @@ pub struct MediaMetadata {
     )]
     title: Option<String>,
 
+    #[serde(flatten)]
     #[html(selector = "span.mc-article--link,
                        span.mc-basic--link,
                        span.mc-iframe-embed--link,
@@ -144,7 +145,7 @@ pub struct Link {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLink {
-//    kind: ResourceLinkKind,
+    //    kind: ResourceLinkKind,
     label: Option<String>,
     location: Option<String>,
     id: Option<String>,
@@ -200,7 +201,7 @@ impl FromHtml for ElementExists {
 }
 
 #[derive(FromText, Debug, PartialEq, Serialize, Deserialize)]
-struct IDFromSuffix(String);
+pub struct IDFromSuffix(String);
 
 impl FromStr for IDFromSuffix {
     type Err = unhtml::Error;
@@ -214,7 +215,7 @@ impl FromStr for IDFromSuffix {
 }
 
 #[derive(FromText, Debug, PartialEq, Serialize, Deserialize)]
-struct IDFromUrl(String);
+pub struct IDFromUrl(String);
 impl From<IDFromUrl> for String {
     fn from(v: IDFromUrl) -> Self {
         v.0
@@ -224,7 +225,10 @@ impl FromStr for IDFromUrl {
     type Err = unhtml::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let url = url::Url::parse(s).or_else(|e| Err(()))?;
+        let base = url::Url::parse("https://parler.com/").unwrap();
+        let options = url::Url::options().base_url(Some(&base));
+
+        let url = options.parse(s).or_else(|e| Err(()))?;
         let domain = url.domain().ok_or(())?;
 
         if domain.ends_with(".parler.com") {
@@ -299,18 +303,21 @@ mod tests {
     </div>
         "#;
         let mn = MediaItem::from_html(str).unwrap();
-        assert_eq!(mn, MediaItem {
-            kind: MediaKind::Video,
-            numeric_id: None,
-            meta: MediaMetadata {
-                title: Some("".into()),
-                excerpt: Some("".into()),
-                link: Some(ResourceLink {
-                    label: Some("https://video.parler.com/78/6K/test_small.mp4".into()),
-                    location: Some("https://video.parler.com/78/6K/test_small.mp4".into()),
-                    id: Some("test".into())
-                })
+        assert_eq!(
+            mn,
+            MediaItem {
+                kind: MediaKind::Video,
+                numeric_id: None,
+                meta: MediaMetadata {
+                    title: Some("".into()),
+                    excerpt: Some("".into()),
+                    link: Some(ResourceLink {
+                        label: Some("https://video.parler.com/78/6K/test_small.mp4".into()),
+                        location: Some("https://video.parler.com/78/6K/test_small.mp4".into()),
+                        id: Some("test".into())
+                    })
+                }
             }
-        })
+        )
     }
 }

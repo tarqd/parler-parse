@@ -1,4 +1,5 @@
 mod parse;
+use anyhow::*;
 use args::{parse_args, Configuration};
 use html5ever::{
     parse_document, tendril::TendrilSink, tokenizer::TokenizerOpts, tree_builder::TreeBuilderOpts,
@@ -18,11 +19,11 @@ use unhtml::{scraper::html, Element};
 use walkdir::WalkDir;
 use ProcessingError::FileIO;
 mod args;
-use anyhow::anyhow;
-use anyhow::Result;
+
 use crossbeam_channel::bounded;
 use rayon::{prelude::*, spawn};
 use thiserror::Error;
+
 #[derive(Debug)]
 enum InputStream {
     File(std::fs::File),
@@ -187,7 +188,7 @@ fn main() -> Result<()> {
                     serde_json::to_writer
                 })(stdout.borrow_mut(), &page)
                 .unwrap();
-		println!("");
+                println!("");
 
                 continue;
             } else if let Err(e) = result {
@@ -197,9 +198,7 @@ fn main() -> Result<()> {
         }
     });
 
-    files.for_each(|v| {
-        /* TODO: log successful files and failed files */
-    });
+    files.for_each(|v| { /* TODO: log successful files and failed files */ });
     let res = tx.send(Message::Stop);
     writer.join().unwrap();
     res.map_err(|e| anyhow!(e))

@@ -27,6 +27,8 @@ impl FromStr for PageAuthor {
         Ok(Self(super::post::Author {
             username: username.ok_or(())?.into(),
             name: name.map(String::from),
+            badge: None,
+            avatar: None,
         }))
     }
 }
@@ -55,13 +57,15 @@ mod tests {
         assert_eq!(
             OGMeta::from_html(input).unwrap(),
             OGMeta {
-                title: Some("@username - name -".into()),
-                url: Some("/post/id".into()),
+                title: "@username - name -".into(),
+                url: "/post/id".into(),
                 image_url: Some("https://images.parler.com/id_256".into()),
-                owner: Some(PageAuthor(Author {
+                owner: PageAuthor(Author {
                     username: "@username".into(),
-                    name: Some("name".into())
-                }))
+                    name: Some("name".into()),
+                    badge: None,
+                    avatar: None,
+                })
             }
         )
     }
