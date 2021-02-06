@@ -72,36 +72,34 @@ impl FromHtml for MediaKind {
 pub struct MediaContainer {
     #[html(selector = ".sensitive--content--wrapper")]
     is_sensitive_content: ElementExists,
+    #[html(selector="div.mc-video--container,
+    div.mc-image--container,
+    div.mc-basic--container,
+    div.mc-article--container,
+    div.mc-website--container,
+    div.mc-iframe-embed--container,
+    div.mc-audio--container")]
     media_items: Vec<MediaItem>,
 }
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
-#[html(selector = "
-div.mc-video--container,
-div.mc-image--container,
-div.mc-basic--container,
-div.mc-article--container,
-div.mc-website--container,
-div.mc-iframe-embed--container,
-div.mc-audio--container
-")]
 pub struct MediaItem {
     kind: MediaKind,
     #[serde(flatten)]
-    #[html(selector = "div.mc-article--meta--wrapper,
-     div.mc-basic--meta--wrapper,
-     div.mc-iframe-embed--meta--wrapper,
-     div.mc-video--meta--wrapper,
-     div.mc-article--meta--wrapper,
-     div.mc-website--meta--wrapper,
-     div.mc-image--meta--wrapper,
-     div.mc-image--modal")]
     meta: MediaMetadata,
     #[html(selector = "div.mc-image--modal", attr = "id")]
     numeric_id: Option<IDFromSuffix>,
 }
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
+#[html(selector="div.mc-article--meta--wrapper,
+div.mc-basic--meta--wrapper,
+div.mc-iframe-embed--meta--wrapper,
+div.mc-video--meta--wrapper,
+div.mc-article--meta--wrapper,
+div.mc-website--meta--wrapper,
+div.mc-image--meta--wrapper,
+div.mc-image--modal")]
 pub struct MediaMetadata {
     #[html(
         selector = "span.mc-article--title,
@@ -247,7 +245,9 @@ impl FromStr for IDFromUrl {
 
 #[cfg(test)]
 mod tests {
+    use html5ever::tree_builder::TreeSink;
     use rayon::collections::linked_list;
+    use unhtml::Element;
 
     use super::*;
 
@@ -281,6 +281,7 @@ mod tests {
     #[test]
     fn test_video_parse() {
         let str = r#"
+        <div class="media-container--wrapper">
         <div class="mc-video--container w--100 p--flex pf--col pf--ac">
         <div class="mc-video--wrapper">
             <video controls>
@@ -300,9 +301,11 @@ mod tests {
               </a>
             </span>
         </div>
-    </div>
+    </div></div>
         "#;
-        let mn = MediaItem::from_html(str).unwrap();
+        let sel = Selector::parse("div.mc-video--container").unwrap();
+        let html = Html::parse_fragment(str);
+        let mn : MediaItem = html.select(&sel).element().unwrap();
         assert_eq!(
             mn,
             MediaItem {
