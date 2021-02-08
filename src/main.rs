@@ -9,12 +9,7 @@ use io::{BufRead, Stdin, Stdout};
 use parse::page::ParlerPage;
 use parse::parser::*;
 use serde_json::{self, to_writer};
-use std::{
-    borrow::{Borrow, BorrowMut},
-    fs::read,
-    io::{self, Read},
-    path::PathBuf,
-};
+use std::{borrow::{Borrow, BorrowMut}, fs::read, io::{self, Read}, path::{Path, PathBuf}};
 use unhtml::{scraper::html, Element};
 use walkdir::WalkDir;
 use ProcessingError::FileIO;
@@ -24,11 +19,26 @@ use anyhow::Result;
 use crossbeam_channel::bounded;
 use rayon::{prelude::*, spawn};
 use thiserror::Error;
+use std::io::Write;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug)]
 enum InputStream {
     File(std::fs::File),
-    Stdin(io::Stdin),
+    Path(PathBuf),
+    Stdin,
+}
+#[derive(Clone)]
+struct NullWriter;
+
+impl std::io::Write for NullWriter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 fn read_buf_document<T>(source: &mut T) -> anyhow::Result<unhtml::scraper::Html>
@@ -51,9 +61,19 @@ impl InputStream {
     fn read_document(&mut self) -> anyhow::Result<unhtml::scraper::Html> {
         match self {
             InputStream::File(f) => read_buf_document(f),
-            InputStream::Stdin(stdin) => {
+            InputStream::Stdin => {
+                let stdin = std::io::stdin();
                 let mut lock = stdin.lock();
                 read_document(&mut lock)
+            }
+            InputStream::Path(p) => {
+                
+                let mut file = std::fs::File::open(p.as_path().borrow()).map_err(|e| ProcessingError::FileIO {
+                    path: p.as_path().to_path_buf(),
+                    source: e.into()
+                })?;
+                read_buf_document(&mut file)
+
             }
         }
     }
@@ -72,27 +92,27 @@ impl From<(PathBuf, ParlerPage)> for Message {
 
 #[derive(Error, Debug)]
 enum ProcessingError {
-    #[error("failed to open file")]
+    #[error("err: failed to read {path}: {source}")]
     FileIO {
         path: PathBuf,
         #[source]
         source: anyhow::Error,
     },
-    #[error("HTML parsing error")]
+    #[error("err: failed to parse html in {path}: {source}")]
     HTMLParseError {
         path: PathBuf,
         #[source]
         source: anyhow::Error,
     },
-    #[error("error parsing parler data from HTML")]
+    #[error("err: found no match in {path}: {source}")]
     ParlerParseError {
         path: PathBuf,
         #[source]
         source: unhtml::Error,
     },
-    #[error("error during processing")]
+    #[error("error during processing: {0:?}")]
     Other(#[from] anyhow::Error),
-    #[error("error during directory traversal")]
+    #[error("error during directory traversal: {0:?}")]
     Traversal(walkdir::Error),
 }
 
@@ -115,6 +135,9 @@ fn main() -> anyhow::Result<()> {
     if !(config.path_count() > 0 || config.should_parse_stdin()) {
         app.print_long_help()?;
     }
+
+
+    
 
     let (tx, rx) = bounded::<Message>(1024);
 
@@ -139,7 +162,8 @@ fn main() -> anyhow::Result<()> {
         .filter_map(|v| match v {
             Ok((path, file)) => Some((path, InputStream::File(file))),
             Err(e) => {
-                eprintln!("do error stuff {}", e);
+                eprintln!("{}", e);
+                
                 None
             }
         })
@@ -171,7 +195,7 @@ fn main() -> anyhow::Result<()> {
                         source: anyhow!("channel send error"),
                     })
                 } else {
-                    anyhow!("this shouldn't be possible")
+                    unreachable!();
                 }
             }),
             Err(e) => Err(e),
@@ -190,7 +214,6 @@ fn main() -> anyhow::Result<()> {
                 })(stdout.borrow_mut(), &page)
                 .unwrap();
                 println!("");
-
                 continue;
             } else if let Err(e) = result {
                 eprintln!("closing {}", e);
