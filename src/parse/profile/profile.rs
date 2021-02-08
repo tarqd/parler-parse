@@ -1,8 +1,5 @@
+use super::super::{media::*, profile::Author};
 use super::prelude::*;
-use super::super::{
-    profile::Author,
-    media::*
-};
 
 #[derive(Debug, PartialEq, FromHtml, Serialize, Deserialize)]
 #[html(selector = "div#hero--wrapper")]

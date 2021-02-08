@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use super::prelude::*;
+use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct UntrimmedString(String);

@@ -1,10 +1,5 @@
 use super::derive::*;
-use super::{
-    opengraph::{OGMeta},
-    post::ParlerPost,
-    profile::ParlerProfile,
-    util::ShouldSkip,
-};
+use super::{opengraph::OGMeta, post::ParlerPost, profile::ParlerProfile, util::ShouldSkip};
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParlerPage {

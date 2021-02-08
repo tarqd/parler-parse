@@ -1,7 +1,7 @@
-use std::str::FromStr;
-use url::Url;
 use super::prelude::*;
 use std::result::Result;
+use std::str::FromStr;
+use url::Url;
 
 // unhtml doesnt support derives from enums and I'm laazy
 #[derive(FromText, Debug, Serialize, Deserialize, PartialEq)]

@@ -1,7 +1,7 @@
+use super::super::util::{ShouldSkip, UntrimmedString};
 use super::prelude::*;
-use super::super::util::{ UntrimmedString, ShouldSkip} ;
-use url::Url;
 use std::{result::Result, str::FromStr};
+use url::Url;
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 #[html(selector = "img")]
 pub struct SimpleImage {
@@ -38,7 +38,7 @@ pub struct UrlParts {
     #[serde(skip_serializing_if = "ShouldSkip::should_skip")]
     host: Option<String>,
     #[serde(skip_serializing_if = "ShouldSkip::should_skip")]
-    is_external: Option<bool>
+    is_external: Option<bool>,
 }
 
 impl FromStr for UrlParts {
@@ -47,16 +47,14 @@ impl FromStr for UrlParts {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let base = Url::parse("https://parler.com/").ok();
         let options = Url::options().base_url(base.as_ref());
-        
-        let url = options.parse(s)
-            .map_err(|e| 
-                unhtml::Error::TextParseError {
-                    text: s.into(),
-                    type_name: "link".into(),
-                    err: e.to_string(),
-                    
-                }
-            )?;
+
+        let url = options
+            .parse(s)
+            .map_err(|e| unhtml::Error::TextParseError {
+                text: s.into(),
+                type_name: "link".into(),
+                err: e.to_string(),
+            })?;
 
         Ok(UrlParts {
             url: url.to_string(),
@@ -65,11 +63,9 @@ impl FromStr for UrlParts {
                 Some(domain) => {
                     let mut it = domain.rsplit('.');
                     Some((Some("com"), Some("parler")) != (it.next(), it.next()))
-                },
-                _ => None
-                
-            }
+                }
+                _ => None,
+            },
         })
-        
     }
 }

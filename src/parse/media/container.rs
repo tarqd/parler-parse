@@ -6,7 +6,7 @@ use super::MediaItem;
 pub struct MediaContainer {
     #[html(selector = ".sensitive--content--wrapper")]
     is_sensitive_content: ElementExists,
-    #[html(selector="div.mc-video--container,
+    #[html(selector = "div.mc-video--container,
     div.mc-image--container,
     div.mc-basic--container,
     div.mc-article--container,

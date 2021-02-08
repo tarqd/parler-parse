@@ -1,8 +1,7 @@
-
-use super::prelude::*;
-use super::timestamp::*;
 use super::super::media::*;
 use super::super::profile::Author;
+use super::prelude::*;
+use super::timestamp::*;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum PostCardType {
@@ -51,4 +50,3 @@ pub struct PostCard {
     #[serde(flatten)]
     media_container: Option<MediaContainer>,
 }
-

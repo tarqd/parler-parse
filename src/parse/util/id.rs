@@ -1,10 +1,10 @@
 use super::prelude::*;
-use std::str::FromStr;
-use std::result::Result;
-use base62::decode;
 use super::ShouldSkip;
+use base62::decode;
+use std::result::Result;
+use std::str::FromStr;
 
-#[derive(Debug,PartialEq, Serialize,Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identifier {
     pub id: Option<String>,
     #[serde(skip_serializing_if = "ShouldSkip::should_skip")]
@@ -17,7 +17,7 @@ impl FromStr for Identifier {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Identifier {
             id: Some(s.into()),
-            id_b62_dec: decode(s).ok()
+            id_b62_dec: decode(s).ok(),
         })
     }
 }

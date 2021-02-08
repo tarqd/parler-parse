@@ -1,6 +1,6 @@
+use super::id::Identifier;
 use super::prelude::*;
 use std::result::Result;
-use super::id::Identifier;
 
 #[derive(FromText, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IDFromUrl(Identifier);

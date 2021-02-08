@@ -1,7 +1,7 @@
-use super::prelude::*;
-use std::str::FromStr;
 use super::super::util::{Identifier, ShouldSkip};
+use super::prelude::*;
 use super::simple::UrlParts;
+use std::str::FromStr;
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLink {
     label: Option<String>,
@@ -11,7 +11,6 @@ pub struct ResourceLink {
     #[serde(skip_serializing_if = "ShouldSkip::should_skip")]
     #[serde(flatten)]
     id: Option<Identifier>,
-    
 }
 
 impl FromHtml for ResourceLink {
@@ -35,12 +34,8 @@ impl FromHtml for ResourceLink {
             .value()
             .attr("href")
             .or_else(|| first.value().attr("src"))
-            .ok_or_else(|| unhtml::Error::SourceNotFound)?
-            ;
-        let id = IDFromUrl::from_str(location)
-            .ok()
-            .map(|v| v.into());
-
+            .ok_or_else(|| unhtml::Error::SourceNotFound)?;
+        let id = IDFromUrl::from_str(location).ok().map(|v| v.into());
 
         Ok(ResourceLink {
             url_raw: location.to_string(),

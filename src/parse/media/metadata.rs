@@ -1,9 +1,8 @@
 use super::prelude::*;
-use super::{ResourceLink};
-
+use super::ResourceLink;
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
-#[html(selector="div.mc-article--meta--wrapper,
+#[html(selector = "div.mc-article--meta--wrapper,
 div.mc-basic--meta--wrapper,
 div.mc-iframe-embed--meta--wrapper,
 div.mc-video--meta--wrapper,

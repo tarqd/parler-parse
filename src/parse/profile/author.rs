@@ -1,6 +1,6 @@
-use super::prelude::*;
-use super::super::util::ShouldSkip;
 use super::super::media::SimpleImage;
+use super::super::util::ShouldSkip;
+use super::prelude::*;
 use super::Badge;
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]

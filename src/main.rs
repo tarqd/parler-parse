@@ -1,4 +1,3 @@
-
 mod parse;
 use anyhow::*;
 use args::{parse_args, Configuration};
@@ -21,10 +20,10 @@ use walkdir::WalkDir;
 use ProcessingError::FileIO;
 mod args;
 
+use anyhow::Result;
 use crossbeam_channel::bounded;
 use rayon::{prelude::*, spawn};
 use thiserror::Error;
-use anyhow::Result;
 
 #[derive(Debug)]
 enum InputStream {
@@ -205,4 +204,3 @@ fn main() -> anyhow::Result<()> {
     writer.join().unwrap();
     res.map_err(|e| anyhow!(e))
 }
-

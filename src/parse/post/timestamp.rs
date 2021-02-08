@@ -1,7 +1,7 @@
 use super::prelude::*;
-use unhtml::{Error};
 use std::result::Result;
 use std::str::FromStr;
+use unhtml::Error;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, FromText)]
 pub struct ApproxRelTimestampOffset(i64);
