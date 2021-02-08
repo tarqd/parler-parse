@@ -1,3 +1,4 @@
+
 mod parse;
 use anyhow::*;
 use args::{parse_args, Configuration};
@@ -23,6 +24,7 @@ mod args;
 use crossbeam_channel::bounded;
 use rayon::{prelude::*, spawn};
 use thiserror::Error;
+use anyhow::Result;
 
 #[derive(Debug)]
 enum InputStream {
@@ -106,7 +108,7 @@ impl From<walkdir::Error> for ProcessingError {
         }
     }
 }
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     let mut app = args::parse_args();
     let config = Configuration::from(app.clone().get_matches());
 
@@ -203,3 +205,4 @@ fn main() -> Result<()> {
     writer.join().unwrap();
     res.map_err(|e| anyhow!(e))
 }
+

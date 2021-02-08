@@ -2,10 +2,15 @@ use super::{
     prelude::*,
     card::*,
     comment::*,
+    super::media::SimpleImage,
+    timestamp::RelTimestamp
 };
+
+use std::str::FromStr;
 
 #[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParlerPost {
+    echo_by: Option<EchoBy>,
     #[html(
         selector = "div.card--post-container span.post,div.card--post-container span.echo--parent, div.card--post-container span.echo--root"
     )]
@@ -38,4 +43,38 @@ pub struct PostCounts {
         attr = "inner"
     )]
     upvote_count: Option<i64>,
+}
+
+#[derive(FromHtml, Debug, PartialEq, Serialize, Deserialize)]
+#[html(selector="div.card--post-container > div.echo-byline--wrapper")]
+struct EchoBy {
+    #[html(
+        selector = "div.eb--statement",
+        attr="inner")]
+    name: EchoByAuthor,
+    #[html(selector="div.eb--profile-pic")]
+    avatar: Option<SimpleImage>,
+    #[html(selector="div.eb--timestamp span.reblock")]
+    #[serde(flatten)]
+    rel_ts: Option<RelTimestamp>
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, FromText)]
+struct EchoByAuthor(String);
+
+impl FromStr for EchoByAuthor {
+    type Err = unhtml::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+       let mut it  = s.trim().split_whitespace();
+        if let (Some("Echoed"),Some("By")) = (it.next(), it.next()) {
+            Ok(Self(
+                it.collect::<Vec<&str>>().join(" ")
+            ))
+        } else {
+            Err(Self::Err::SourceNotFound)
+        }
+            
+            
+    }
 }

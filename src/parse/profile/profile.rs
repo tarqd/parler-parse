@@ -9,7 +9,7 @@ use super::super::{
 pub struct ParlerProfile {
     #[serde(flatten)]
     #[html(selector = "#hero")]
-    user: Option<Author>,
+    user: Author,
     #[html(selector = "#hero--top")]
     banner: Option<SimpleImage>,
     #[html(selector = "#hero--bottom div.profile-photo-image")]

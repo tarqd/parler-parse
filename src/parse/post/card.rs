@@ -48,6 +48,7 @@ pub struct PostCard {
     impression_count: Option<i64>,
     #[html(selector = ":scope > div.card--body
        ")]
+    #[serde(flatten)]
     media_container: Option<MediaContainer>,
 }
 

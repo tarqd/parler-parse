@@ -24,11 +24,6 @@ pub fn parse_args<'a, 'b>() -> clap::App<'a, 'b> {
   .help("Recursively search directories")
   .long("recursive")
   .short("r")
-).arg(Arg::with_name("output record delimiter")
-.help("Define string outputted after each parsed file. Defaults to new line")
-.long("delimiter")
-.short("d")
-.takes_value(true)
 ).arg(Arg::with_name("compact output")
 .help("Output compact (single line) JSON. Defaults to true if stdin in not a terminal")
 .long("compact")
@@ -46,7 +41,7 @@ pub fn parse_args<'a, 'b>() -> clap::App<'a, 'b> {
 .takes_value(true)
 .multiple(true)
 .number_of_values(1)
-.long("from-file")
+.long("paths-from-file")
 )
 }
 
@@ -55,7 +50,6 @@ pub struct Configuration {
     paths: Vec<PathBuf>,
     compact_output: bool,
     recursive: bool,
-    delimiter: String,
     use_stdin: bool,
 }
 
@@ -99,9 +93,6 @@ impl Configuration {
     pub fn recursive(&self) -> bool {
         self.recursive
     }
-    pub fn delimiter(&self) -> &str {
-        self.delimiter.as_ref()
-    }
 }
 
 impl<'a> From<clap::ArgMatches<'a>> for Configuration {
@@ -127,9 +118,6 @@ impl<'a> From<clap::ArgMatches<'a>> for Configuration {
             use_stdin: (!matches.is_present("path") && is_readable_stdin() || found_stdin_path),
             compact_output: (matches.is_present("compact output") || !is_tty_stdout()),
             recursive: matches.is_present("recursive"),
-            delimiter: matches
-                .value_of("output record delimiter")
-                .map_or("\n".into(), |v| v.into()),
         }
     }
 }
@@ -145,7 +133,6 @@ mod tests {
         assert_eq!(config.compact_output, true);
         assert_eq!(config.paths.len(), 0);
         assert_eq!(config.use_stdin, false);
-        assert_eq!(config.delimiter, "\n");
         Ok(())
     }
     #[test]
@@ -157,7 +144,6 @@ mod tests {
         assert_eq!(config.paths.len(), 0);
 
         assert_eq!(config.use_stdin, true);
-        assert_eq!(config.delimiter, "\n");
         Ok(())
     }
     #[test]

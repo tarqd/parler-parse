@@ -19,9 +19,10 @@ pub struct Comment {
     body: Option<UntrimmedString>,
     #[html(selector = "div.card--comment-container div.card--footer div.comment--actions")]
     engagements: Option<CommentCounts>,
-    
-    #[html(selector = "div.card--comment-container div.card--body")]
-    media_container: Option<Vec<MediaContainer>>,
+
+    #[html(selector = ":scope > div.card--comment-container div.card--body")]
+    #[serde(flatten)]
+    media_container: Option<MediaContainer>,
 
     // post/026d108991b44cffbb394497aad428e4
     #[html(selector="div.replies-list--container", attr="id")]

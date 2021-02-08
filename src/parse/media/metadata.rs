@@ -22,7 +22,6 @@ pub struct MediaMetadata {
     )]
     title: Option<String>,
 
-    #[serde(flatten)]
     #[html(selector = "span.mc-article--link,
                        span.mc-basic--link,
                        span.mc-iframe-embed--link,
