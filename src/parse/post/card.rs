@@ -32,7 +32,7 @@ impl FromHtml for PostCardType {
 pub struct PostCard {
     kind: PostCardType,
     #[html(
-        selector = "div.card--header  a.card-meta--row, div.card--header div.ch--avatar-col,  div.ch--avatar--wrapper"
+        selector = "div.card--header  a.card-meta--row, div.card--header span.card-meta--row, div.card--header div.ch--avatar-col,  div.ch--avatar--wrapper"
     )]
     author: Option<Author>,
     #[serde(flatten)]
