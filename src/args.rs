@@ -48,6 +48,8 @@ pub fn parse_args<'a, 'b>() -> clap::App<'a, 'b> {
 #[derive(Debug, PartialEq)]
 pub struct Configuration {
     paths: Vec<PathBuf>,
+    success_path: Option<PathBuf>,
+    fail_path: Option<PathBuf>,
     compact_output: bool,
     recursive: bool,
     use_stdin: bool,
@@ -93,6 +95,13 @@ impl Configuration {
     pub fn recursive(&self) -> bool {
         self.recursive
     }
+
+    pub fn fail_path(&self) -> Option<&PathBuf> {
+        self.fail_path.as_ref()
+    }
+    pub fn success_writer(&self) -> Option<&PathBuf> {
+        self.success_path.as_ref()
+    }
 }
 
 impl<'a> From<clap::ArgMatches<'a>> for Configuration {
@@ -117,6 +126,8 @@ impl<'a> From<clap::ArgMatches<'a>> for Configuration {
             paths,
             use_stdin: (!matches.is_present("path") && is_readable_stdin() || found_stdin_path),
             compact_output: (matches.is_present("compact output") || !is_tty_stdout()),
+            fail_path: matches.value_of("fail file").map(|v| PathBuf::from(v)),
+            success_path: matches.value_of("success file").map(|v| PathBuf::from(v)),
             recursive: matches.is_present("recursive"),
         }
     }
