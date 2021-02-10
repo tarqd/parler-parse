@@ -1,6 +1,6 @@
 [package]
 name = "parler-indexer"
-version = "0.1.0"
+version = "0.9.0"
 authors = ["tarq"]
 edition = "2018"
 
@@ -11,6 +11,16 @@ unhtml = "0.8.0"
 #unhtml = { path = "./vendor/unhtml/unhtml" }
 unhtml_derive = "0.8.0"
 selectors = "0.22"
+html5ever = "0.25.1"
 serde = { version = "1.0.120", features = ["derive"] }
 serde_json = "1.0.61"
 url = "2.2.0"
+clap = "2.33.3"
+grep-cli = "0.1.5"
+walkdir = "2.3.1"
+rayon = "1.5.0"
+crossbeam-channel = "0.5.0"
+anyhow = "1.0.38"
+thiserror = "1.0.23"
+base62 = "1.0.0"
+#base62 = { path = "./vendor/base62" }

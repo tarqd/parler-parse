@@ -26,19 +26,24 @@ This project was developed against the "partial parler post text" archive that a
 
 - OG Meta
 - Posts + Echos 
-	- Author (username + name)
+	- Author (username + name  + avatar + badge)
 	- Body
-	- Media Attachments (Url, Title, Excerpt, Type)
-- Comments
+	- Media Attachments (Url, Title, Excerpt, Type, ID (numeric and base62/hex encoded))
+- Comments + Replies + Engagements
 - Metrics (impressions, echoes, comment count, etc)
 - All mentioned usernames in the post 
+- Profile pages + all posts
+- Estimated timestamp offset (3 days ago -> - 3 days in seconds)
 
 
-## TODO
+## Roadmap
 
-- [DONE] Bug: Author field will be null if a user just echoe'd a post (only has the author of the echoed post). We can populate it with the og meta title field
-- [] Allow bulk / multi-threaded processing for all files in a directory for quickly importing into elastic/mellisearch/tantivy
-- [] Allow automatically downloading requested videos/images from the distributed denial of secrets s3 (will require s3 api key and will cost money)
+- ✅ Bug: Author field will be null if a user just echoe'd a post (only has the author of the echoed post). We can populate it with the og meta title field
+- ✅ Multi-threaded, recursive directory processing (crossbeam + rayon)
+- ✅ Allow bulk / multi-threaded processing for all files in a directory for quickly importing into elastic/mellisearch/tantivy
+- [TODO]  Add file metadata (create/modified date/path)
+- [TODO]  WARC support + metadata
+- [TODO]  Fix up timestamps based on metadata 
 
 
 
@@ -48,72 +53,76 @@ This project was developed against the "partial parler post text" archive that a
 ```json
 {
   "opengraph_meta": {
-    "title": "@tacticallyefficient - tacticallyefficient - @RudyG \n@JennaEllisEsq \n@SidneyPowell",
-    "url": "/post/b9c94be7d211411eae18d83533a68638",
-    "image_url": "https://images.parler.com/d996a859e8644d77bb30f5a4de519b48_256"
+    "title": "@AnthonyDaubs - AnthonyDaubs -",
+    "owner": {
+      "name": "AnthonyDaubs",
+      "username": "@AnthonyDaubs"
+    },
+    "url": "/post/8c36602d9568482dacfc55d9b63d5a07",
+    "image_url": "https://images.parler.com/af00acf47ba74651998fb9676aabd117_256"
   },
-  "post": {
-    "cards": [
-      {
-        "kind": "EchoParent",
-        "author": {
-          "name": "Justice Will Prevail 🌎",
-          "username": "@JusticeByLight"
-        },
-        "body": "",
-        "impression_count": 2330,
-        "media_container": {
-          "sensitive_id": null,
+  "posts": [
+    {
+      "echo_by": null,
+      "cards": [
+        {
+          "kind": "Post",
+          "author": {
+            "name": "AnthonyDaubs",
+            "username": "@AnthonyDaubs",
+            "avatar": {
+              "url_raw": "https://images.parler.com/af00acf47ba74651998fb9676aabd117_256",
+              "url": "https://images.parler.com/af00acf47ba74651998fb9676aabd117_256",
+              "host": "images.parler.com",
+              "is_external": false,
+              "id": "af00acf47ba74651998fb9676aabd117"
+            }
+          },
+          "rel_ts": "2 days ago",
+          "approx_ts_offset": -172800,
+          "body": "",
+          "impression_count": 3,
+          "is_sensitive_content": true,
           "media_items": [
             {
-              "meta": {
-                "title": null,
-                "link": {
-                  "kind": "Image",
-                  "label": "Image",
-                  "location": "https://api.parler.com/l/9zQbh"
-                },
-                "excerpt": null
-              }
+              "kind": "Video",
+              "title": "",
+              "link": {
+                "label": "https://video.parler.com/Q2/s5/Q2s5oVN1pfgk_small.mp4",
+                "url_raw": "https://video.parler.com/Q2/s5/Q2s5oVN1pfgk_small.mp4",
+                "url": "https://video.parler.com/Q2/s5/Q2s5oVN1pfgk_small.mp4",
+                "host": "video.parler.com",
+                "is_external": false,
+                "id": "Q2s5oVN1pfgk",
+                "id_b62_dec": 1355361448748163000000
+              },
+              "excerpt": "",
+              "source": {
+                "label": "",
+                "url_raw": "https://video.parler.com/Q2/s5/Q2s5oVN1pfgk_small.mp4",
+                "url": "https://video.parler.com/Q2/s5/Q2s5oVN1pfgk_small.mp4",
+                "host": "video.parler.com",
+                "is_external": false,
+                "id": "Q2s5oVN1pfgk",
+                "id_b62_dec": 1355361448748163000000
+              },
+              "numeric_id": null
             }
           ]
         }
-      },
-      {
-        "kind": "Post",
-        "author": {
-          "name": "truthseeker",
-          "username": "@tacticallyefficient"
-        },
-        "body": "@RudyG@JennaEllisEsq@SidneyPowell",
-        "impression_count": 58,
-        "media_container": {
-          "sensitive_id": null,
-          "media_items": []
-        }
+      ],
+      "comments": [],
+      "post_id": null,
+      "mentions": [],
+      "engagements": {
+        "comment_count": 0,
+        "echo_count": 0,
+        "upvote_count": 0
       }
-    ],
-    "comments": [
-      {
-        "author": {
-          "name": "SusanC.H.",
-          "username": "@SusanH08"
-        },
-        "body": "Doesn’t matter!! Take a listen. It’s long. But it’s good!! Pray for this woman. She is risking her life to save our asses. Let people know we have silent warriors! 🔥🔥🇺🇸🇺🇸"
-      }
-    ],
-    "mentions": [
-      "@RudyG",
-      "@JennaEllisEsq",
-      "@SidneyPowell"
-    ],
-    "engagements": {
-      "comment_count": 7,
-      "echo_count": 37,
-      "upvote_count": 44
     }
-  }
+  ]
 }
+
 ```
 
 

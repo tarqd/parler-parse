@@ -1,0 +1,3 @@
+[submodule "vendor/base62"]
+	path = vendor/base62
+	url = https://github.com/fbernier/base62.git
