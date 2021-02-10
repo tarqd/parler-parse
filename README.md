@@ -18,6 +18,27 @@ cargo run < examples/echo--parent-no-comment.html
 
 ```
 
+### CLI options
+
+```
+USAGE:
+    parler-indexer [FLAGS] [OPTIONS] [--] [path]...
+
+FLAGS:
+    -c, --compact      Output compact (single line) JSON. Defaults to true if stdin in not a terminal
+    -h, --help         Prints help information
+    -r, --recursive    Recursively search directories
+    -V, --version      Prints version information
+
+OPTIONS:
+        --fail-log <fail file>              Write failed paths to a file
+        --paths-from-file <path file>...    Read paths from a file
+        --success-log <success file>        Write successfully processed paths to a file
+
+ARGS:
+    <path>...    HTML File(s) or directory of HTML File(s) to parse
+```
+
 # Where do I get the archives?
 
 This project was developed against the "partial parler post text" archive that available from Distributed Denial of Secrets. 
