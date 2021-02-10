@@ -31,18 +31,6 @@ enum InputStream {
     Path(PathBuf),
     Stdin,
 }
-#[derive(Clone)]
-struct NullWriter;
-
-impl std::io::Write for NullWriter {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
-    }
-}
 
 fn read_buf_document<T>(source: &mut T) -> anyhow::Result<unhtml::scraper::Html>
 where
@@ -200,7 +188,6 @@ fn main() -> anyhow::Result<()> {
 
     let (tx, rx) = crossbeam_channel::unbounded::<Message>();
 
-    let paths = config.walk_paths();
 
     let files = std::iter::once_with(|| {
         if should_parse_stdin {
