@@ -1,6 +1,6 @@
 [package]
 name = "parler-indexer"
-version = "0.1.0"
+version = "0.9.0"
 authors = ["tarq"]
 edition = "2018"
 
@@ -22,5 +22,5 @@ rayon = "1.5.0"
 crossbeam-channel = "0.5.0"
 anyhow = "1.0.38"
 thiserror = "1.0.23"
-#base62 = "0.3.0"
-base62 = { path = "./vendor/base62" }
+base62 = "1.0.0"
+#base62 = { path = "./vendor/base62" }

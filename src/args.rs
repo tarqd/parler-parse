@@ -1,10 +1,13 @@
+use anyhow::Context;
 use clap::{crate_authors, crate_version, values_t_or_exit, App, Arg, ArgMatches, SubCommand};
 use grep_cli::{is_readable_stdin, is_tty_stdout, stdout, stdout_buffered_line};
 use std::{
     borrow::Borrow,
     ffi::{OsStr, OsString},
-    io,
-    iter::Rev,
+    fs::File,
+    io::{self, BufRead, BufReader},
+    iter::{self, Rev},
+    os::unix::prelude::OsStrExt,
     path::{Path, PathBuf},
     vec,
 };
@@ -32,15 +35,16 @@ pub fn parse_args<'a, 'b>() -> clap::App<'a, 'b> {
 .help("Write failed paths to a file")
 .takes_value(true)
 .long("fail-log")
+.number_of_values(1)
 ).arg(Arg::with_name("success file")
 .help("Write successfully processed paths to a file")
 .takes_value(true)
+.number_of_values(1)
 .long("success-log")
 ).arg(Arg::with_name("path file")
 .help("Read paths from a file")
 .takes_value(true)
 .multiple(true)
-.number_of_values(1)
 .long("paths-from-file")
 )
 }
@@ -49,6 +53,7 @@ pub fn parse_args<'a, 'b>() -> clap::App<'a, 'b> {
 pub struct Configuration {
     paths: Vec<PathBuf>,
     success_path: Option<PathBuf>,
+    path_file: Option<PathBuf>,
     fail_path: Option<PathBuf>,
     compact_output: bool,
     recursive: bool,
@@ -64,18 +69,51 @@ fn is_hidden(entry: &DirEntry) -> bool {
 }
 
 impl Configuration {
-    pub fn walk_paths<'a>(&'a self) -> impl Iterator<Item = Result<DirEntry, walkdir::Error>> + 'a {
+    pub fn walk_paths<'a>(
+        &'a self,
+    ) -> Box<dyn Iterator<Item = Result<DirEntry, walkdir::Error>> + Send> {
         let recursive = self.recursive;
-        self.paths()
-            .map(move |v| {
-                let mut wd = WalkDir::new(v);
-                if !recursive {
-                    wd = wd.max_depth(1);
-                }
+        let paths = self.paths();
+        let paths_from_file = match self.path_file() {
+            Some(file) => Some(
+                File::open(file)
+                    .map(BufReader::new)
+                    .map(|v| {
+                        v.lines().map(|v| {
+                            v.map(|v| {
+                                PathBuf::from(OsStr::from_bytes(
+                                    grep_cli::unescape(v.as_str()).as_slice(),
+                                ))
+                            })
+                        })
+                    })
+                    .context("failed to read line file"),
+            ),
+            None => None,
+        };
+        if let Some(Err(e)) = paths_from_file {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
+        let process = move |v| {
+            let mut wd = WalkDir::new(v);
+            if !recursive {
+                wd = wd.max_depth(0);
+            }
 
-                wd.into_iter().filter_entry(|v| !is_hidden(v))
-            })
-            .flatten()
+            wd.into_iter().filter_entry(|v| !is_hidden(v))
+        };
+
+        if let Some(Ok(path_file)) = paths_from_file {
+            Box::new(
+                path_file
+                    .filter_map(|v| v.ok())
+                    .map(move |v| process(v))
+                    .flatten(),
+            )
+        } else {
+            return Box::new(self.paths().map(move |v| process(v)).flatten());
+        }
     }
 
     pub fn should_parse_stdin(&self) -> bool {
@@ -86,8 +124,8 @@ impl Configuration {
         self.paths.len()
     }
 
-    pub fn paths<'a>(&'a self) -> impl Iterator<Item = &'a PathBuf> {
-        self.paths.iter()
+    pub fn paths(&self) -> impl Iterator<Item = PathBuf> {
+        self.paths.clone().into_iter()
     }
     pub fn compact(&self) -> bool {
         self.compact_output
@@ -95,11 +133,13 @@ impl Configuration {
     pub fn recursive(&self) -> bool {
         self.recursive
     }
-
+    pub fn path_file(&self) -> Option<&PathBuf> {
+        self.path_file.as_ref()
+    }
     pub fn fail_path(&self) -> Option<&PathBuf> {
         self.fail_path.as_ref()
     }
-    pub fn success_writer(&self) -> Option<&PathBuf> {
+    pub fn success_path(&self) -> Option<&PathBuf> {
         self.success_path.as_ref()
     }
 }
@@ -129,6 +169,7 @@ impl<'a> From<clap::ArgMatches<'a>> for Configuration {
             fail_path: matches.value_of("fail file").map(|v| PathBuf::from(v)),
             success_path: matches.value_of("success file").map(|v| PathBuf::from(v)),
             recursive: matches.is_present("recursive"),
+            path_file: matches.value_of("path file").map(PathBuf::from),
         }
     }
 }

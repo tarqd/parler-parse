@@ -43,7 +43,9 @@ checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "base62"
-version = "0.3.0"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef4b0a3bcb863baac59fa31d72576983b082f8d12ada6f37a535340e2a202834"
 
 [[package]]
 name = "bitflags"

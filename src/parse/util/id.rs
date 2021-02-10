@@ -8,7 +8,7 @@ use std::str::FromStr;
 pub struct Identifier {
     pub id: Option<String>,
     #[serde(skip_serializing_if = "ShouldSkip::should_skip")]
-    pub id_b62_dec: Option<u64>,
+    pub id_b62_dec: Option<u128>,
 }
 
 impl FromStr for Identifier {
