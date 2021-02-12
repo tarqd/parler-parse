@@ -1,5 +1,4 @@
 mod parse;
-use tar::{Archive, Entry};
 use anyhow::*;
 use args::{Configuration};
 use html5ever::{ParseOpts, parse_document, tendril::TendrilSink, tokenizer::TokenizerOpts, tree_builder::TreeBuilderOpts};
@@ -217,7 +216,7 @@ fn main() -> anyhow::Result<()> {
                     let path = v.path();
                     let mut builder = OutputBuilder::new(InputKind::HTML, path.into());
                     builder.entry(&v)
-                        .source(config.source().map(String::from));
+                        .source(source.map(String::from));
                     std::fs::File::open(path)
                         .map(move |v| (builder, InputStream::File(v)))
                         .map_err(|e| FileIO {
