@@ -1,4 +1,5 @@
 mod parse;
+use tar::{Archive, Entry};
 use anyhow::*;
 use args::{Configuration};
 use html5ever::{ParseOpts, parse_document, tendril::TendrilSink, tokenizer::TokenizerOpts, tree_builder::TreeBuilderOpts};
@@ -6,50 +7,58 @@ use io::{BufRead, BufWriter, Stdin, Stdout};
 use parse::page::ParlerPage;
 use parse::parser::*;
 use serde_json::{self, to_writer};
-use std::{
-    borrow::{Borrow, BorrowMut},
-    fs::read,
-    io::{self, Read},
-    path::{Path, PathBuf},
-};
+use std::{borrow::{Borrow, BorrowMut}, fs::{File, read}, io::{self, BufReader, Read, StdoutLock}, path::{Path, PathBuf}};
 use std::{cell::RefCell, fmt};
 use unhtml::{scraper::html, Element};
 use walkdir::WalkDir;
 use ProcessingError::FileIO;
 mod args;
-
+use tee::*;
 use anyhow::Result;
 use crossbeam_channel::{bounded, SendError};
 use rayon::{prelude::*, spawn};
 use std::io::Write;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
+use sha1::*;
+use parse::meta::*;
 
 #[derive(Debug)]
 enum InputStream {
     File(std::fs::File),
     Path(PathBuf),
+    
     Stdin,
 }
 
-fn read_buf_document<T>(source: &mut T) -> anyhow::Result<unhtml::scraper::Html>
+
+
+
+
+
+fn read_buf_document<T>(source: &mut T) -> anyhow::Result<(String, unhtml::scraper::Html)>
 where
     T: Read,
 {
     let mut reader = io::BufReader::new(source);
     read_document(&mut reader)
 }
-fn read_document<T>(source: &mut T) -> anyhow::Result<unhtml::scraper::Html>
+fn read_document<T>(source: &mut T) -> anyhow::Result<(String, unhtml::scraper::Html)>
 where
     T: Read,
 {
     let doc = unhtml::scraper::Html::new_document();
     let parser = html5ever::parse_document(doc, ParseOpts::default());
-    Ok(parser.from_utf8().read_from(source)?)
+    let mut hasher = Sha1::new();
+    let res = {
+        let mut tee = TeeReader::new(source, &mut hasher);
+        parser.from_utf8().read_from(&mut tee)?
+    };
+    Ok((std::format!("{:x}", hasher.finalize()), res))
 }
 
 impl InputStream {
-    fn read_document(&mut self) -> anyhow::Result<unhtml::scraper::Html> {
+    fn read_document(&mut self) -> anyhow::Result<(String, unhtml::scraper::Html)> {
         match self {
             InputStream::File(f) => read_buf_document(f),
             InputStream::Stdin => {
@@ -71,16 +80,11 @@ impl InputStream {
 }
 
 enum Message {
-    Job((PathBuf, ParlerPage)),
+    Job(ParseOutput),
     ErrorLog(PathBuf),
     Stop,
 }
 
-impl From<(PathBuf, ParlerPage)> for Message {
-    fn from(input: (PathBuf, ParlerPage)) -> Self {
-        Message::Job(input)
-    }
-}
 
 #[derive(Error, Debug)]
 enum ProcessingError {
@@ -137,9 +141,10 @@ impl From<walkdir::Error> for ProcessingError {
 impl From<crossbeam_channel::SendError<Message>> for ProcessingError {
     fn from(message: crossbeam_channel::SendError<Message>) -> Self {
         match message.into_inner() {
-            Message::Job((path, _)) | Message::ErrorLog(path) => {
-                ProcessingError::JobSendError { path }
-            }
+            Message::Job(out)=> {
+                ProcessingError::JobSendError { path: out.meta.file.map_or_else(|| PathBuf::from("-"), |v| v.path) }
+            },
+            Message::ErrorLog(path) => ProcessingError::JobSendError { path },
             Message::Stop => {
                 ProcessingError::Other(anyhow!("failed to send stop message to channel"))
             }
@@ -151,7 +156,7 @@ type BufFile = io::BufWriter<std::fs::File>;
 fn main() -> anyhow::Result<()> {
     let mut app = args::parse_args();
     let config = Configuration::from(app.clone().get_matches());
-
+    let source = config.source();
     let compact = config.compact();
     if !(config.path_count() > 0 || config.should_parse_stdin()) {
         app.print_long_help()?;
@@ -187,11 +192,11 @@ fn main() -> anyhow::Result<()> {
     let send_errors = fail_log.is_some();
 
     let (tx, rx) = crossbeam_channel::unbounded::<Message>();
-
-
+    
     let files = std::iter::once_with(|| {
         if should_parse_stdin {
-            Some(Ok((PathBuf::from("-"), InputStream::Stdin)))
+            let mut builder = OutputBuilder::new(InputKind::HTML, PathBuf::from("-"));
+            Some(Ok((builder, InputStream::Stdin)))
         } else {
             None
         }
@@ -210,8 +215,11 @@ fn main() -> anyhow::Result<()> {
             .map(|v| {
                 v.and_then(|v| {
                     let path = v.path();
+                    let mut builder = OutputBuilder::new(InputKind::HTML, path.into());
+                    builder.entry(&v)
+                        .source(config.source().map(String::from));
                     std::fs::File::open(path)
-                        .map(|v| (path.to_path_buf(), InputStream::File(v)))
+                        .map(move |v| (builder, InputStream::File(v)))
                         .map_err(|e| FileIO {
                             path: path.to_path_buf(),
                             source: e.into(),
@@ -220,32 +228,32 @@ fn main() -> anyhow::Result<()> {
             }),
     )
     .map(|res| {
-        res.and_then(|(path, mut input)| {
+        res.and_then(|(mut b, mut input)| {
             input
                 .read_document()
                 .map_err(|e| ProcessingError::HTMLParseError {
-                    path: path.clone(),
+                    path: b.path().to_path_buf(),
                     source: e,
                 })
                 .and_then(
-                    |v: Html| -> Result<(PathBuf, ParlerPage), ProcessingError> {
-                        let p = path;
+                    |(sha1, v)| -> Result<ParseOutput, ProcessingError> {
                         let sel = Selector::parse(":root").unwrap();
+                        b.sha1(sha1);
                         v.select(&sel)
                             .element()
                             .map_err(|e| ProcessingError::ParlerParseError {
-                                path: p.clone(),
+                                path: b.path().to_path_buf(),
                                 source: e,
                             })
-                            .map(|v| (p, v))
+                            .map(move |v| b.build(v).unwrap())
                     },
                 )
-                .map(|v| Message::from(v))
+                .map(|v| Message::Job(v))
         })
     });
 
     let writer = std::thread::spawn(move || -> Result<()> {
-        let mut stdout = io::stdout();
+ 
         let mut success_log = match success_log {
             Some(Ok(l)) => Some(l),
             _ => None,
@@ -254,28 +262,33 @@ fn main() -> anyhow::Result<()> {
             Some(Ok(l)) => Some(l),
             _ => None,
         };
+        let stdout = io::stdout();
+        
 
         loop {
             let result = rx.recv()?;
+            let mut lock = stdout.lock();
             match result {
-                Message::Job((path, page)) => {
-                    (if !compact {
-                        serde_json::to_writer_pretty
-                    } else {
-                        serde_json::to_writer
-                    })(stdout.borrow_mut(), &page)
+                Message::Job(page) => {
+                    
+                        (if compact {
+                            serde_json::to_writer
+                        } else {
+                            serde_json::to_writer_pretty
+                        })(&mut lock, &page)
                     .context("error while writing output")?;
-
-                    println!("");
+                    writeln!(&mut lock).context("error while writing output")?;
                     if let Some(log) = success_log.borrow_mut() {
-                        writeln!(log, "{}", grep_cli::escape_os(path.as_os_str()))
+                        if let Some(meta) = page.meta.file { 
+                            writeln!(log, "{}", grep_cli::escape_os(meta.path.as_os_str()))
                             .context("error while writing to success log")?;
+                        }
                     }
                     continue;
                 }
                 Message::ErrorLog(ref path) => {
                     if let Some(fail_log) = fail_log.borrow_mut() {
-                        writeln!(fail_log, "{}", grep_cli::escape_os(path.as_os_str()))
+                            writeln!(fail_log, "{}", grep_cli::escape_os(path.as_os_str()))
                             .context("error while writing to fail log")?;
                     }
                 }

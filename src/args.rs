@@ -46,6 +46,13 @@ pub fn parse_args<'a, 'b>() -> clap::App<'a, 'b> {
 .takes_value(true)
 .multiple(true)
 .long("paths-from-file")
+).arg(Arg::with_name("source label")
+.help("Label for the source of the scraped data. Added to metadata of parsed pages")
+.takes_value(true)
+.multiple(false)
+.number_of_values(1)
+.long("source-label")
+.short("l")
 )
 }
 
@@ -55,6 +62,7 @@ pub struct Configuration {
     success_path: Option<PathBuf>,
     path_file: Option<PathBuf>,
     fail_path: Option<PathBuf>,
+    source_label: Option<String>,
     compact_output: bool,
     recursive: bool,
     use_stdin: bool,
@@ -115,11 +123,13 @@ impl Configuration {
             return Box::new(self.paths().map(move |v| process(v)).flatten());
         }
     }
-
+    
     pub fn should_parse_stdin(&self) -> bool {
         self.use_stdin
     }
-
+    pub fn source(&self) -> Option<&String> {
+        self.source_label.as_ref()
+    }
     pub fn path_count(&self) -> usize {
         self.paths.len()
     }
@@ -170,6 +180,7 @@ impl<'a> From<clap::ArgMatches<'a>> for Configuration {
             success_path: matches.value_of("success file").map(|v| PathBuf::from(v)),
             recursive: matches.is_present("recursive"),
             path_file: matches.value_of("path file").map(PathBuf::from),
+            source_label: matches.value_of("source label").map(String::from),
         }
     }
 }
