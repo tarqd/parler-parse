@@ -3,6 +3,7 @@ pub mod opengraph;
 pub mod page;
 pub mod post;
 pub mod profile;
+pub mod meta;
 
 pub mod util;
 pub use serde::{Deserialize, Serialize};
@@ -15,6 +16,7 @@ pub mod prelude {
     pub use super::post::*;
     pub use super::profile::*;
     pub use super::util::*;
+    pub use super::meta::*;
     pub use super::{to_writer, to_writer_pretty};
     pub use super::{Deserialize, Serialize};
 }
