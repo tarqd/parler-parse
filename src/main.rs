@@ -195,6 +195,7 @@ fn main() -> anyhow::Result<()> {
     let files = std::iter::once_with(|| {
         if should_parse_stdin {
             let mut builder = OutputBuilder::new(InputKind::HTML, PathBuf::from("-"));
+            builder.source(config.source().map(String::from));
             Some(Ok((builder, InputStream::Stdin)))
         } else {
             None
@@ -240,10 +241,10 @@ fn main() -> anyhow::Result<()> {
                         b.sha1(sha1);
                         v.select(&sel)
                             .element()
-                            .map_err(|e| { config.source().map(|v| eprintln!("{}", v)); ProcessingError::ParlerParseError {
+                            .map_err(|e| ProcessingError::ParlerParseError {
                                 path: b.path().to_path_buf(),
                                 source: e,
-                            }})
+                            })
                             .map(move |v| b.build(v).unwrap())
                     },
                 )
